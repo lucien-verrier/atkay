@@ -1,13 +1,23 @@
 // Game configuration
 const GAME_WIDTH = 60;
 const GAME_HEIGHT = 30;
-const WALL_CHAR = '#';
+const WALL_CHARS = ['█', '▓', '▒', '░', '■'];  // Different wall textures for heightmap
 const FLOOR_CHARS = ['.', ',', '`', '\''];
 const PLAYER_CHAR = '@';
 const STAIRS_CHAR = '>';
 const CHALICE_CHAR = '☆';
 const CHEST_CHAR = '□';
 const MAX_FLOORS = 20;
+
+// Difficulty system (0 = normal, 10 = mega hard)
+let difficultyLevel = 0;
+let difficultyMultipliers = {
+    enemyHP: 1.0,
+    enemyAttack: 1.0,
+    enemyCount: 1.0,
+    chestCount: 1.0,
+    xpReward: 1.0
+};
 
 // Enemy definitions with difficulty tiers
 const ENEMY_TYPES = {
@@ -65,12 +75,14 @@ const POTION_TYPES = [
 // Game state
 let gameMap = [];
 let floorVariants = [];
+let wallHeightMap = [];
 let enemies = [];
 let chests = [];
 let stairs = null;
 let chalice = null;
 let currentFloor = 1;
 let gameWon = false;
+let gameStarted = false;
 let player = {
     x: 0,
     y: 0,
@@ -94,13 +106,28 @@ let messageLog = [];
 let showingChest = false;
 let currentChest = null;
 
+// Calculate difficulty multipliers based on level
+function calculateDifficultyMultipliers() {
+    const d = difficultyLevel / 10; // 0.0 to 1.0
+
+    difficultyMultipliers.enemyHP = 1.0 + (d * 1.5);        // 1.0x to 2.5x
+    difficultyMultipliers.enemyAttack = 1.0 + (d * 1.0);   // 1.0x to 2.0x
+    difficultyMultipliers.enemyCount = 1.0 + (d * 0.5);    // 1.0x to 1.5x
+    difficultyMultipliers.chestCount = 1.0 - (d * 0.3);    // 1.0x to 0.7x
+    difficultyMultipliers.xpReward = 1.0 + (d * 0.5);      // 1.0x to 1.5x (reward for harder)
+}
+
 // Initialize the game
 function init() {
-    generateLevel();
-    render();
-    if (!document.querySelector('[data-input-setup]')) {
-        setupInput();
-        document.body.setAttribute('data-input-setup', 'true');
+    if (!gameStarted) {
+        renderDifficultySelection();
+        if (!document.querySelector('[data-input-setup]')) {
+            setupInput();
+            document.body.setAttribute('data-input-setup', 'true');
+        }
+    } else {
+        generateLevel();
+        render();
     }
 }
 
@@ -112,6 +139,7 @@ function generateLevel() {
     while (!validLevel && attempts < 50) {
         generateCave();
         generateFloorVariants();
+        generateWallHeightMap();
 
         // Get all accessible floor tiles
         const accessibleTiles = getAccessibleTiles();
@@ -169,9 +197,9 @@ function generateCave() {
         gameMap[y] = [];
         for (let x = 0; x < GAME_WIDTH; x++) {
             if (x === 0 || y === 0 || x === GAME_WIDTH - 1 || y === GAME_HEIGHT - 1) {
-                gameMap[y][x] = WALL_CHAR;
+                gameMap[y][x] = 'wall';
             } else {
-                gameMap[y][x] = Math.random() < 0.45 ? WALL_CHAR : 'floor';
+                gameMap[y][x] = Math.random() < 0.45 ? 'wall' : 'floor';
             }
         }
     }
@@ -188,7 +216,7 @@ function generateSimpleLevel() {
         gameMap[y] = [];
         for (let x = 0; x < GAME_WIDTH; x++) {
             if (x === 0 || y === 0 || x === GAME_WIDTH - 1 || y === GAME_HEIGHT - 1) {
-                gameMap[y][x] = WALL_CHAR;
+                gameMap[y][x] = 'wall';
             } else {
                 gameMap[y][x] = 'floor';
             }
@@ -196,6 +224,7 @@ function generateSimpleLevel() {
     }
 
     generateFloorVariants();
+    generateWallHeightMap();
 
     const allFloors = [];
     for (let y = 1; y < GAME_HEIGHT - 1; y++) {
@@ -227,6 +256,29 @@ function generateFloorVariants() {
     }
 }
 
+// Generate wall heightmap for texture variation
+function generateWallHeightMap() {
+    wallHeightMap = [];
+
+    // Use simple Perlin-like noise for smooth height variation
+    const scale = 0.15;
+    for (let y = 0; y < GAME_HEIGHT; y++) {
+        wallHeightMap[y] = [];
+        for (let x = 0; x < GAME_WIDTH; x++) {
+            // Create smooth noise using multiple frequencies
+            let value = 0;
+            value += Math.sin(x * scale) * Math.cos(y * scale);
+            value += Math.sin(x * scale * 2) * Math.cos(y * scale * 2) * 0.5;
+            value += Math.sin(x * scale * 0.5) * Math.cos(y * scale * 0.5) * 2;
+
+            // Normalize to 0-4 range for WALL_CHARS indices
+            value = (value + 4) / 8; // Roughly normalize
+            value = Math.max(0, Math.min(0.99, value)); // Clamp 0-0.99
+            wallHeightMap[y][x] = Math.floor(value * WALL_CHARS.length);
+        }
+    }
+}
+
 // Smooth the cave
 function smoothCave(map) {
     const newMap = [];
@@ -235,9 +287,9 @@ function smoothCave(map) {
         for (let x = 0; x < GAME_WIDTH; x++) {
             const wallCount = countWallNeighbors(map, x, y);
             if (x === 0 || y === 0 || x === GAME_WIDTH - 1 || y === GAME_HEIGHT - 1) {
-                newMap[y][x] = WALL_CHAR;
+                newMap[y][x] = 'wall';
             } else if (wallCount >= 5) {
-                newMap[y][x] = WALL_CHAR;
+                newMap[y][x] = 'wall';
             } else if (wallCount <= 3) {
                 newMap[y][x] = 'floor';
             } else {
@@ -258,7 +310,7 @@ function countWallNeighbors(map, x, y) {
             const ny = y + dy;
             if (nx < 0 || ny < 0 || nx >= GAME_WIDTH || ny >= GAME_HEIGHT) {
                 count++;
-            } else if (map[ny][nx] === WALL_CHAR) {
+            } else if (map[ny][nx] === 'wall') {
                 count++;
             }
         }
@@ -346,7 +398,8 @@ function placeObjectOnAccessibleTile(tiles, existingObjects = []) {
 function spawnEnemies(accessibleTiles) {
     enemies = [];
     const baseCount = 5 + Math.floor(currentFloor / 2);
-    const enemyCount = baseCount + Math.floor(Math.random() * 5);
+    const adjustedCount = Math.floor(baseCount * difficultyMultipliers.enemyCount);
+    const enemyCount = adjustedCount + Math.floor(Math.random() * 5);
 
     // Get valid enemy types for this floor
     const validTypes = Object.entries(ENEMY_TYPES).filter(([key, type]) =>
@@ -362,15 +415,19 @@ function spawnEnemies(accessibleTiles) {
         const tile = placeObjectOnAccessibleTile(accessibleTiles, occupied);
 
         if (tile) {
+            // Apply difficulty multipliers
+            const scaledHP = Math.ceil(template.hp * difficultyMultipliers.enemyHP);
+            const scaledAttack = Math.ceil(template.attack * difficultyMultipliers.enemyAttack);
+
             const enemy = {
                 x: tile.x,
                 y: tile.y,
                 char: template.char,
                 name: template.name,
-                hp: template.hp,
-                maxHp: template.hp,
-                attack: template.attack,
-                xp: template.xp,
+                hp: scaledHP,
+                maxHp: scaledHP,
+                attack: scaledAttack,
+                xp: Math.ceil(template.xp * difficultyMultipliers.xpReward),
                 color: template.color,
                 colorVariant: Math.floor(Math.random() * 3)
             };
@@ -383,7 +440,9 @@ function spawnEnemies(accessibleTiles) {
 // Spawn chests
 function spawnChests(accessibleTiles) {
     chests = [];
-    const chestCount = 2 + Math.floor(Math.random() * 3); // 2-4 chests per floor
+    // Reduced base count: 1-2 chests (50% of original 2-4)
+    const baseChestCount = 1 + Math.floor(Math.random() * 2);
+    const chestCount = Math.max(1, Math.floor(baseChestCount * difficultyMultipliers.chestCount));
     const occupied = [player, stairs, chalice, ...enemies].filter(o => o);
 
     for (let i = 0; i < chestCount && accessibleTiles.length > occupied.length; i++) {
@@ -597,7 +656,6 @@ function openChest(chest) {
 
     currentChest = chest;
     showingChest = true;
-    chest.opened = true;
     render();
 }
 
@@ -611,6 +669,10 @@ function takeItem(slot) {
     player.inventory[slot] = newItem;
     updatePlayerStats();
 
+    // Mark chest as opened and remove item
+    currentChest.opened = true;
+    currentChest.item = null;
+
     if (oldItem) {
         addMessage(`Swapped ${oldItem.name} for ${newItem.name}`);
     } else {
@@ -622,6 +684,13 @@ function takeItem(slot) {
 
 // Leave item in chest
 function closeChest() {
+    // If leaving item behind, mark chest as opened so it can't be accessed again
+    if (currentChest && currentChest.item) {
+        currentChest.opened = true;
+        currentChest.item = null;
+        addMessage('You left the item behind.');
+    }
+
     currentChest = null;
     showingChest = false;
     render();
@@ -667,9 +736,10 @@ function render() {
             } else if (enemy) {
                 const colorClass = `${enemy.color}-${enemy.colorVariant}`;
                 html += `<span class="${colorClass}">${enemy.char}</span>`;
-            } else if (gameMap[y][x] === WALL_CHAR) {
-                const wallVariant = (x + y) % 3;
-                html += `<span class="wall-${wallVariant}">${WALL_CHAR}</span>`;
+            } else if (gameMap[y][x] === 'wall') {
+                const heightIndex = wallHeightMap[y][x];
+                const wallChar = WALL_CHARS[heightIndex];
+                html += `<span class="wall-${heightIndex}">${wallChar}</span>`;
             } else {
                 const floorChar = floorVariants[y][x];
                 const floorVariant = (x * y) % 4;
@@ -687,14 +757,25 @@ function render() {
 function renderStatus() {
     const statusEl = document.getElementById('status-panel');
     const xpNeeded = player.level * 20;
-    const hpBar = createBar(player.hp, player.maxHp, 15);
-    const xpBar = createBar(player.xp, xpNeeded, 15);
+
+    // Color code HP based on percentage
+    const hpPercent = player.hp / player.maxHp;
+    let hpClass = 'hp-full';
+    if (hpPercent <= 0.25) hpClass = 'hp-critical';
+    else if (hpPercent <= 0.5) hpClass = 'hp-low';
+    else if (hpPercent <= 0.75) hpClass = 'hp-medium';
+
+    // Color code XP based on percentage
+    const xpPercent = player.xp / xpNeeded;
+    let xpClass = 'xp-low';
+    if (xpPercent >= 0.75) xpClass = 'xp-high';
+    else if (xpPercent >= 0.5) xpClass = 'xp-medium';
 
     let html = `
         <div class="stat-row"><span class="stat-label">Floor:</span> ${currentFloor}/${MAX_FLOORS}</div>
         <div class="stat-row"><span class="stat-label">Level:</span> ${player.level}</div>
-        <div class="stat-row"><span class="stat-label">HP:</span> ${hpBar} ${player.hp}/${player.maxHp}</div>
-        <div class="stat-row"><span class="stat-label">XP:</span> ${xpBar} ${player.xp}/${xpNeeded}</div>
+        <div class="stat-row"><span class="stat-label">HP:</span> <span class="${hpClass}">${player.hp}/${player.maxHp}</span></div>
+        <div class="stat-row"><span class="stat-label">XP:</span> <span class="${xpClass}">${player.xp}/${xpNeeded}</span></div>
         <div class="stat-row"><span class="stat-label">Attack:</span> ${player.attack}</div>
         <div class="stat-row"><span class="stat-label">Defense:</span> ${player.defense}</div>
         <div class="stat-row"><span class="stat-label">Enemies:</span> ${enemies.length}</div>
@@ -722,7 +803,24 @@ function renderStatus() {
 // Render chest UI
 function renderChestUI() {
     const canvas = document.getElementById('game-canvas');
+
+    // Safety check
+    if (!currentChest || !currentChest.item) {
+        showingChest = false;
+        render();
+        return;
+    }
+
     const item = currentChest.item;
+    const BOX_WIDTH = 36;
+
+    // Helper to create a properly padded line
+    const padLine = (text) => {
+        if (text.length >= BOX_WIDTH) {
+            return text.substring(0, BOX_WIDTH);
+        }
+        return text + ' '.repeat(BOX_WIDTH - text.length);
+    };
 
     let itemStats = '';
     if (item.type === 'weapon') itemStats = `Attack: +${item.attack}`;
@@ -739,32 +837,31 @@ function renderChestUI() {
         else if (currentItem.type === 'potion') currentStats = `Effect: ${currentItem.effect}`;
     }
 
+    const foundLine = padLine(`  Found: ${item.name}`);
+    const typeLine = padLine(`  Type: ${item.type}`);
+    const statsLine = padLine(`  ${itemStats}`);
+    const currentLine = padLine(`  Current ${item.type}: ${currentItem ? currentItem.name : 'None'}`);
+    const currentStatsLine = currentItem ? padLine(`  ${currentStats}`) : '';
+
     canvas.innerHTML = `
         <div class="chest-ui">
             ╔════════════════════════════════════╗
-            ║          CHEST OPENED!             ║
+            ║${padLine('          CHEST OPENED!')}║
             ╠════════════════════════════════════╣
-            ║                                    ║
-            ║  Found: ${item.name.padEnd(25, ' ')} ║
-            ║  Type: ${item.type.padEnd(26, ' ')} ║
-            ║  ${itemStats.padEnd(32, ' ')} ║
-            ║                                    ║
-            ║  Current ${item.type}: ${(currentItem ? currentItem.name : 'None').padEnd(18, ' ')} ║
-            ${currentItem ? `║  ${currentStats.padEnd(32, ' ')} ║` : ''}
-            ║                                    ║
-            ║  [T] Take / Swap                   ║
-            ║  [L] Leave it                      ║
-            ║                                    ║
+            ║${padLine('')}║
+            ║${foundLine}║
+            ║${typeLine}║
+            ║${statsLine}║
+            ║${padLine('')}║
+            ║${currentLine}║
+            ${currentItem ? `║${currentStatsLine}║` : ''}
+            ║${padLine('')}║
+            ║${padLine('  [T] Take / Swap')}║
+            ║${padLine('  [L] Leave it')}║
+            ║${padLine('')}║
             ╚════════════════════════════════════╝
         </div>
     `;
-}
-
-// Create a visual bar
-function createBar(current, max, length) {
-    const filled = Math.floor((current / max) * length);
-    const empty = length - filled;
-    return '[' + '='.repeat(Math.max(0, filled)) + ' '.repeat(Math.max(0, empty)) + ']';
 }
 
 // Render victory screen
@@ -813,6 +910,45 @@ function renderGameOver() {
     statusEl.innerHTML = '<div class="game-over-text">You were slain!</div>';
 }
 
+// Render difficulty selection screen
+function renderDifficultySelection() {
+    const canvas = document.getElementById('game-canvas');
+    const statusEl = document.getElementById('status-panel');
+
+    canvas.innerHTML = `
+        <div class="difficulty-screen">
+            ╔════════════════════════════════════╗
+            ║     ASCII ROGUELIKE DUNGEON        ║
+            ╠════════════════════════════════════╣
+            ║                                    ║
+            ║   SELECT DIFFICULTY (0-10):        ║
+            ║                                    ║
+            ║   Current: ${String(difficultyLevel).padStart(2, ' ')}                       ║
+            ║                                    ║
+            ║   0 = Normal                       ║
+            ║   5 = Hard                         ║
+            ║   10 = Mega Hard                   ║
+            ║                                    ║
+            ║   [↑/↓] Adjust | [Enter] Start    ║
+            ║                                    ║
+            ╚════════════════════════════════════╝
+        </div>
+    `;
+
+    const multipliers = `
+        <div class="difficulty-info">
+            <div class="difficulty-title">Difficulty ${difficultyLevel}</div>
+            <div class="multiplier">Enemy HP: ${(difficultyMultipliers.enemyHP * 100).toFixed(0)}%</div>
+            <div class="multiplier">Enemy Attack: ${(difficultyMultipliers.enemyAttack * 100).toFixed(0)}%</div>
+            <div class="multiplier">Enemy Count: ${(difficultyMultipliers.enemyCount * 100).toFixed(0)}%</div>
+            <div class="multiplier">Chest Count: ${(difficultyMultipliers.chestCount * 100).toFixed(0)}%</div>
+            <div class="multiplier">XP Reward: ${(difficultyMultipliers.xpReward * 100).toFixed(0)}%</div>
+        </div>
+    `;
+
+    statusEl.innerHTML = multipliers;
+}
+
 // Setup keyboard input
 function setupInput() {
     document.addEventListener('keydown', handleInput);
@@ -820,6 +956,26 @@ function setupInput() {
 
 // Handle keyboard input
 function handleInput(event) {
+    // Difficulty selection handling
+    if (!gameStarted) {
+        if (event.code === 'ArrowUp') {
+            event.preventDefault();
+            difficultyLevel = Math.min(10, difficultyLevel + 1);
+            calculateDifficultyMultipliers();
+            renderDifficultySelection();
+        } else if (event.code === 'ArrowDown') {
+            event.preventDefault();
+            difficultyLevel = Math.max(0, difficultyLevel - 1);
+            calculateDifficultyMultipliers();
+            renderDifficultySelection();
+        } else if (event.code === 'Enter') {
+            event.preventDefault();
+            gameStarted = true;
+            init();
+        }
+        return;
+    }
+
     // Restart game
     if ((gameOver || gameWon) && event.code === 'KeyR') {
         event.preventDefault();
@@ -831,6 +987,13 @@ function handleInput(event) {
 
     // Chest UI handling
     if (showingChest) {
+        // Safety check
+        if (!currentChest || !currentChest.item) {
+            showingChest = false;
+            render();
+            return;
+        }
+
         if (event.code === 'KeyT') {
             event.preventDefault();
             takeItem(currentChest.item.type);
@@ -904,6 +1067,7 @@ function handleInput(event) {
 function restartGame() {
     gameOver = false;
     gameWon = false;
+    gameStarted = false;
     messageLog = [];
     currentFloor = 1;
     showingChest = false;
