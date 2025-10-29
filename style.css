@@ -145,9 +145,9 @@ h1 {
     text-shadow: 0 0 5px #ff3333;
 }
 
-/* Wall variants with gradient colors */
+/* Wall variants with heightmap gradient colors */
 .wall-0 {
-    color: #666;
+    color: #888;
 }
 
 .wall-1 {
@@ -155,7 +155,15 @@ h1 {
 }
 
 .wall-2 {
+    color: #666;
+}
+
+.wall-3 {
     color: #555;
+}
+
+.wall-4 {
+    color: #999;
 }
 
 /* Floor variants with subtle gradient */
@@ -468,4 +476,31 @@ h1 {
     font-weight: bold;
     text-align: center;
     margin-top: 50px;
+}
+
+/* Difficulty selection screen */
+.difficulty-screen {
+    color: #4a9eff;
+    font-size: 16px;
+    line-height: 22px;
+    text-align: left;
+    padding: 40px;
+    white-space: pre;
+}
+
+.difficulty-info {
+    margin-top: 20px;
+}
+
+.difficulty-title {
+    color: #4a9eff;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.multiplier {
+    color: #e0e0e0;
+    margin: 5px 0;
+    font-size: 14px;
 }
