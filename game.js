@@ -597,7 +597,6 @@ function openChest(chest) {
 
     currentChest = chest;
     showingChest = true;
-    chest.opened = true;
     render();
 }
 
@@ -611,6 +610,10 @@ function takeItem(slot) {
     player.inventory[slot] = newItem;
     updatePlayerStats();
 
+    // Mark chest as opened and remove item
+    currentChest.opened = true;
+    currentChest.item = null;
+
     if (oldItem) {
         addMessage(`Swapped ${oldItem.name} for ${newItem.name}`);
     } else {
@@ -622,6 +625,13 @@ function takeItem(slot) {
 
 // Leave item in chest
 function closeChest() {
+    // If leaving item behind, mark chest as opened so it can't be accessed again
+    if (currentChest && currentChest.item) {
+        currentChest.opened = true;
+        currentChest.item = null;
+        addMessage('You left the item behind.');
+    }
+
     currentChest = null;
     showingChest = false;
     render();
@@ -722,6 +732,14 @@ function renderStatus() {
 // Render chest UI
 function renderChestUI() {
     const canvas = document.getElementById('game-canvas');
+
+    // Safety check
+    if (!currentChest || !currentChest.item) {
+        showingChest = false;
+        render();
+        return;
+    }
+
     const item = currentChest.item;
 
     let itemStats = '';
@@ -831,6 +849,13 @@ function handleInput(event) {
 
     // Chest UI handling
     if (showingChest) {
+        // Safety check
+        if (!currentChest || !currentChest.item) {
+            showingChest = false;
+            render();
+            return;
+        }
+
         if (event.code === 'KeyT') {
             event.preventDefault();
             takeItem(currentChest.item.type);
