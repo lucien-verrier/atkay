@@ -11,9 +11,12 @@
         <h1>ASCII Roguelike Demo</h1>
         <div class="info">
             <p>Use numpad to move: 7 8 9 / 4 5 6 / 1 2 3</p>
-            <p>@ = Player | # = Wall | . = Floor</p>
+            <p>@ = Player | g = Goblin | k = Kobold | O = Ogre</p>
         </div>
-        <div id="game-canvas"></div>
+        <div class="game-layout">
+            <div id="status-panel" class="status-panel"></div>
+            <div id="game-canvas"></div>
+        </div>
     </div>
     <script src="game.js"></script>
 </body>

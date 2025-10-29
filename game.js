@@ -2,17 +2,60 @@
 const GAME_WIDTH = 60;
 const GAME_HEIGHT = 30;
 const WALL_CHAR = '#';
-const FLOOR_CHAR = '.';
+const FLOOR_CHARS = ['.', ',', '`', '\''];
 const PLAYER_CHAR = '@';
+
+// Enemy definitions
+const ENEMY_TYPES = {
+    goblin: {
+        char: 'g',
+        name: 'Goblin',
+        hp: 8,
+        attack: 3,
+        xp: 10,
+        color: 'enemy-goblin'
+    },
+    kobold: {
+        char: 'k',
+        name: 'Kobold',
+        hp: 6,
+        attack: 2,
+        xp: 8,
+        color: 'enemy-kobold'
+    },
+    ogre: {
+        char: 'O',
+        name: 'Ogre',
+        hp: 20,
+        attack: 6,
+        xp: 25,
+        color: 'enemy-ogre'
+    }
+};
 
 // Game state
 let gameMap = [];
-let player = { x: 0, y: 0 };
+let floorVariants = [];
+let enemies = [];
+let player = {
+    x: 0,
+    y: 0,
+    hp: 30,
+    maxHp: 30,
+    attack: 5,
+    xp: 0,
+    level: 1
+};
+let gameOver = false;
+let messageLog = [];
 
 // Initialize the game
 function init() {
     generateCave();
+    generateFloorVariants();
     placePlayer();
+    spawnEnemies();
+    addMessage('Welcome to the dungeon! Fight monsters and survive.');
     render();
     setupInput();
 }
@@ -29,7 +72,7 @@ function generateCave() {
                 gameMap[y][x] = WALL_CHAR;
             } else {
                 // 45% chance of wall for initial random noise
-                gameMap[y][x] = Math.random() < 0.45 ? WALL_CHAR : FLOOR_CHAR;
+                gameMap[y][x] = Math.random() < 0.45 ? WALL_CHAR : 'floor';
             }
         }
     }
@@ -37,6 +80,17 @@ function generateCave() {
     // Apply cellular automata rules to smooth the cave
     for (let iteration = 0; iteration < 4; iteration++) {
         gameMap = smoothCave(gameMap);
+    }
+}
+
+// Generate floor texture variants
+function generateFloorVariants() {
+    floorVariants = [];
+    for (let y = 0; y < GAME_HEIGHT; y++) {
+        floorVariants[y] = [];
+        for (let x = 0; x < GAME_WIDTH; x++) {
+            floorVariants[y][x] = FLOOR_CHARS[Math.floor(Math.random() * FLOOR_CHARS.length)];
+        }
     }
 }
 
@@ -57,7 +111,7 @@ function smoothCave(map) {
             else if (wallCount >= 5) {
                 newMap[y][x] = WALL_CHAR;
             } else if (wallCount <= 3) {
-                newMap[y][x] = FLOOR_CHAR;
+                newMap[y][x] = 'floor';
             } else {
                 newMap[y][x] = map[y][x]; // Keep current state
             }
@@ -122,28 +176,189 @@ function isValidPosition(x, y) {
     if (x < 0 || y < 0 || x >= GAME_WIDTH || y >= GAME_HEIGHT) {
         return false;
     }
-    return gameMap[y][x] === FLOOR_CHAR;
+    return gameMap[y][x] === 'floor';
+}
+
+// Spawn enemies on the map
+function spawnEnemies() {
+    enemies = [];
+    const enemyCount = 8 + Math.floor(Math.random() * 5); // 8-12 enemies
+
+    for (let i = 0; i < enemyCount; i++) {
+        // Randomly select enemy type
+        const types = Object.keys(ENEMY_TYPES);
+        const typeKey = types[Math.floor(Math.random() * types.length)];
+        const template = ENEMY_TYPES[typeKey];
+
+        // Find a valid position
+        let x, y, attempts = 0;
+        do {
+            x = Math.floor(Math.random() * (GAME_WIDTH - 2)) + 1;
+            y = Math.floor(Math.random() * (GAME_HEIGHT - 2)) + 1;
+            attempts++;
+        } while ((!isValidPosition(x, y) || isPositionOccupied(x, y)) && attempts < 100);
+
+        if (attempts < 100) {
+            enemies.push({
+                x: x,
+                y: y,
+                char: template.char,
+                name: template.name,
+                hp: template.hp,
+                maxHp: template.hp,
+                attack: template.attack,
+                xp: template.xp,
+                color: template.color,
+                colorVariant: Math.floor(Math.random() * 3) // 0, 1, or 2 for color variants
+            });
+        }
+    }
+}
+
+// Check if position is occupied by player or enemy
+function isPositionOccupied(x, y) {
+    if (player.x === x && player.y === y) return true;
+    return enemies.some(e => e.x === x && e.y === y);
+}
+
+// Get enemy at position
+function getEnemyAt(x, y) {
+    return enemies.find(e => e.x === x && e.y === y);
+}
+
+// Add message to log
+function addMessage(text) {
+    messageLog.push(text);
+    if (messageLog.length > 5) {
+        messageLog.shift();
+    }
+}
+
+// Combat system
+function attack(attacker, defender) {
+    const damage = attacker.attack + Math.floor(Math.random() * 3) - 1; // +/- 1 variance
+    defender.hp -= damage;
+    return damage;
+}
+
+// Grant XP and check for level up
+function gainXP(amount) {
+    player.xp += amount;
+    const xpNeeded = player.level * 20;
+
+    if (player.xp >= xpNeeded) {
+        player.xp -= xpNeeded;
+        player.level++;
+        player.maxHp += 5;
+        player.hp = player.maxHp; // Full heal on level up
+        player.attack += 2;
+        addMessage(`LEVEL UP! You are now level ${player.level}!`);
+        addMessage(`HP: ${player.maxHp} | Attack: ${player.attack}`);
+    }
 }
 
 // Render the game to the canvas
 function render() {
+    if (gameOver) {
+        renderGameOver();
+        return;
+    }
+
     const canvas = document.getElementById('game-canvas');
     let html = '';
 
     for (let y = 0; y < GAME_HEIGHT; y++) {
         for (let x = 0; x < GAME_WIDTH; x++) {
+            const enemy = getEnemyAt(x, y);
+
             if (x === player.x && y === player.y) {
-                html += `<span class="player">${PLAYER_CHAR}</span>`;
+                const healthPercent = player.hp / player.maxHp;
+                const playerColor = healthPercent > 0.6 ? 'player-healthy' :
+                                   healthPercent > 0.3 ? 'player-injured' : 'player-critical';
+                html += `<span class="${playerColor}">${PLAYER_CHAR}</span>`;
+            } else if (enemy) {
+                const colorClass = `${enemy.color}-${enemy.colorVariant}`;
+                html += `<span class="${colorClass}">${enemy.char}</span>`;
             } else if (gameMap[y][x] === WALL_CHAR) {
-                html += `<span class="wall">${WALL_CHAR}</span>`;
+                const wallVariant = (x + y) % 3;
+                html += `<span class="wall-${wallVariant}">${WALL_CHAR}</span>`;
             } else {
-                html += `<span class="floor">${FLOOR_CHAR}</span>`;
+                const floorChar = floorVariants[y][x];
+                const floorVariant = (x * y) % 4;
+                html += `<span class="floor-${floorVariant}">${floorChar}</span>`;
             }
         }
         html += '\n';
     }
 
     canvas.innerHTML = html;
+    renderStatus();
+}
+
+// Render status panel
+function renderStatus() {
+    const statusEl = document.getElementById('status-panel');
+    const xpNeeded = player.level * 20;
+    const hpBar = createBar(player.hp, player.maxHp, 20);
+    const xpBar = createBar(player.xp, xpNeeded, 20);
+
+    let html = `
+        <div class="stat-row">
+            <span class="stat-label">Level:</span> ${player.level}
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">HP:</span> ${hpBar} ${player.hp}/${player.maxHp}
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">XP:</span> ${xpBar} ${player.xp}/${xpNeeded}
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Attack:</span> ${player.attack}
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Enemies:</span> ${enemies.length}
+        </div>
+    `;
+
+    if (messageLog.length > 0) {
+        html += '<div class="message-log">';
+        messageLog.forEach(msg => {
+            html += `<div class="message">${msg}</div>`;
+        });
+        html += '</div>';
+    }
+
+    statusEl.innerHTML = html;
+}
+
+// Create a visual bar
+function createBar(current, max, length) {
+    const filled = Math.floor((current / max) * length);
+    const empty = length - filled;
+    return '[' + '='.repeat(filled) + ' '.repeat(empty) + ']';
+}
+
+// Render game over screen
+function renderGameOver() {
+    const canvas = document.getElementById('game-canvas');
+    const statusEl = document.getElementById('status-panel');
+
+    canvas.innerHTML = `
+        <div class="game-over">
+            ╔════════════════════════════╗
+            ║       GAME OVER            ║
+            ║                            ║
+            ║   You have died...         ║
+            ║                            ║
+            ║   Final Level: ${String(player.level).padStart(2, ' ')}          ║
+            ║   Kills: ${String(enemies.length).padStart(2, ' ')}               ║
+            ║                            ║
+            ║   Press R to restart       ║
+            ╚════════════════════════════╝
+        </div>
+    `;
+
+    statusEl.innerHTML = '<div class="game-over-text">You were slain!</div>';
 }
 
 // Setup keyboard input for numpad
@@ -153,6 +368,14 @@ function setupInput() {
 
 // Handle keyboard input
 function handleInput(event) {
+    if (gameOver && (event.code === 'KeyR' || event.code === 'Numpad5')) {
+        event.preventDefault();
+        restartGame();
+        return;
+    }
+
+    if (gameOver) return;
+
     // Map numpad keys to directions
     const keyMap = {
         'Numpad7': { dx: -1, dy: -1 }, // NW
@@ -173,17 +396,111 @@ function handleInput(event) {
     }
 }
 
+// Restart the game
+function restartGame() {
+    gameOver = false;
+    messageLog = [];
+    player = {
+        x: 0,
+        y: 0,
+        hp: 30,
+        maxHp: 30,
+        attack: 5,
+        xp: 0,
+        level: 1
+    };
+    init();
+}
+
 // Move the player
 function movePlayer(dx, dy) {
+    if (gameOver) return;
+
     const newX = player.x + dx;
     const newY = player.y + dy;
+
+    // Check for enemy at target position
+    const enemy = getEnemyAt(newX, newY);
+    if (enemy) {
+        // Combat!
+        const damage = attack(player, enemy);
+        addMessage(`You hit ${enemy.name} for ${damage} damage!`);
+
+        if (enemy.hp <= 0) {
+            addMessage(`You killed the ${enemy.name}!`);
+            gainXP(enemy.xp);
+            enemies = enemies.filter(e => e !== enemy);
+        }
+
+        // Enemy counter-attacks if still alive
+        if (enemy.hp > 0) {
+            const counterDamage = attack(enemy, player);
+            addMessage(`${enemy.name} hits you for ${counterDamage} damage!`);
+
+            if (player.hp <= 0) {
+                gameOver = true;
+                addMessage('You have died!');
+            }
+        }
+
+        // Enemy AI - all enemies take a turn
+        enemyTurns();
+        render();
+        return;
+    }
 
     // Check collision with walls
     if (isValidPosition(newX, newY)) {
         player.x = newX;
         player.y = newY;
+
+        // Enemy AI - all enemies take a turn
+        enemyTurns();
         render();
     }
+}
+
+// Enemy AI - simple chase behavior
+function enemyTurns() {
+    if (gameOver) return;
+
+    enemies.forEach(enemy => {
+        // Simple AI: move towards player if within range
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.abs(dx) + Math.abs(dy);
+
+        // Only chase if within 10 tiles
+        if (distance > 10) return;
+
+        // Calculate move direction (one step at a time)
+        let moveX = 0, moveY = 0;
+        if (Math.abs(dx) > Math.abs(dy)) {
+            moveX = dx > 0 ? 1 : -1;
+        } else if (dy !== 0) {
+            moveY = dy > 0 ? 1 : -1;
+        }
+
+        const targetX = enemy.x + moveX;
+        const targetY = enemy.y + moveY;
+
+        // Check if target is player
+        if (targetX === player.x && targetY === player.y) {
+            // Attack player
+            const damage = attack(enemy, player);
+            addMessage(`${enemy.name} hits you for ${damage} damage!`);
+
+            if (player.hp <= 0) {
+                gameOver = true;
+                addMessage('You have died!');
+            }
+        }
+        // Check if target is valid and not occupied by another enemy
+        else if (isValidPosition(targetX, targetY) && !getEnemyAt(targetX, targetY)) {
+            enemy.x = targetX;
+            enemy.y = targetY;
+        }
+    });
 }
 
 // Start the game when the page loads
