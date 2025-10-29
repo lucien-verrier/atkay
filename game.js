@@ -260,19 +260,27 @@ function generateFloorVariants() {
 function generateWallHeightMap() {
     wallHeightMap = [];
 
-    // Use simple Perlin-like noise for smooth height variation
-    const scale = 0.15;
+    // Create noisy heightmap for rocky texture
+    const scale = 0.2;
     for (let y = 0; y < GAME_HEIGHT; y++) {
         wallHeightMap[y] = [];
         for (let x = 0; x < GAME_WIDTH; x++) {
-            // Create smooth noise using multiple frequencies
+            // Base smooth noise using multiple frequencies
             let value = 0;
             value += Math.sin(x * scale) * Math.cos(y * scale);
             value += Math.sin(x * scale * 2) * Math.cos(y * scale * 2) * 0.5;
-            value += Math.sin(x * scale * 0.5) * Math.cos(y * scale * 0.5) * 2;
+            value += Math.sin(x * scale * 0.5) * Math.cos(y * scale * 0.5) * 1.5;
+
+            // Add significant random noise for roughness (30% influence)
+            const randomNoise = (Math.random() - 0.5) * 2; // -1 to 1
+            value = value * 0.7 + randomNoise * 0.3;
+
+            // Add small-scale detail noise for rocky texture
+            const detailNoise = (Math.random() - 0.5) * 1.5;
+            value += detailNoise * 0.4;
 
             // Normalize to 0-4 range for WALL_CHARS indices
-            value = (value + 4) / 8; // Roughly normalize
+            value = (value + 3) / 6; // Roughly normalize
             value = Math.max(0, Math.min(0.99, value)); // Clamp 0-0.99
             wallHeightMap[y][x] = Math.floor(value * WALL_CHARS.length);
         }
@@ -684,11 +692,13 @@ function takeItem(slot) {
 
 // Leave item in chest
 function closeChest() {
-    // If leaving item behind, mark chest as opened so it can't be accessed again
-    if (currentChest && currentChest.item) {
+    // Always mark current chest as opened when closing
+    if (currentChest) {
         currentChest.opened = true;
-        currentChest.item = null;
-        addMessage('You left the item behind.');
+        if (currentChest.item) {
+            currentChest.item = null;
+            addMessage('You left the item behind.');
+        }
     }
 
     currentChest = null;
@@ -915,22 +925,38 @@ function renderDifficultySelection() {
     const canvas = document.getElementById('game-canvas');
     const statusEl = document.getElementById('status-panel');
 
+    const BOX_WIDTH = 36;
+    const padLine = (text) => {
+        if (text.length >= BOX_WIDTH) {
+            return text.substring(0, BOX_WIDTH);
+        }
+        return text + ' '.repeat(BOX_WIDTH - text.length);
+    };
+
+    const line1 = padLine('     ASCII ROGUELIKE DUNGEON');
+    const line2 = padLine('   SELECT DIFFICULTY (0-10):');
+    const line3 = padLine(`   Current: ${difficultyLevel}`);
+    const line4 = padLine('   0 = Normal');
+    const line5 = padLine('   5 = Hard');
+    const line6 = padLine('   10 = Mega Hard');
+    const line7 = padLine('   [↑/↓] Adjust | [Enter] Start');
+
     canvas.innerHTML = `
         <div class="difficulty-screen">
             ╔════════════════════════════════════╗
-            ║     ASCII ROGUELIKE DUNGEON        ║
+            ║${line1}║
             ╠════════════════════════════════════╣
-            ║                                    ║
-            ║   SELECT DIFFICULTY (0-10):        ║
-            ║                                    ║
-            ║   Current: ${String(difficultyLevel).padStart(2, ' ')}                       ║
-            ║                                    ║
-            ║   0 = Normal                       ║
-            ║   5 = Hard                         ║
-            ║   10 = Mega Hard                   ║
-            ║                                    ║
-            ║   [↑/↓] Adjust | [Enter] Start    ║
-            ║                                    ║
+            ║${padLine('')}║
+            ║${line2}║
+            ║${padLine('')}║
+            ║${line3}║
+            ║${padLine('')}║
+            ║${line4}║
+            ║${line5}║
+            ║${line6}║
+            ║${padLine('')}║
+            ║${line7}║
+            ║${padLine('')}║
             ╚════════════════════════════════════╝
         </div>
     `;
@@ -1018,6 +1044,9 @@ function handleInput(event) {
     if (event.code === 'KeyE') {
         event.preventDefault();
 
+        // Don't interact if already in chest UI
+        if (showingChest) return;
+
         // Check for stairs
         if (stairs && player.x === stairs.x && player.y === stairs.y) {
             descendStairs();
@@ -1033,8 +1062,11 @@ function handleInput(event) {
 
         // Check for chest
         const chest = getChestAt(player.x, player.y);
-        if (chest) {
+        if (chest && !chest.opened) {
             openChest(chest);
+            return;
+        } else if (chest && chest.opened) {
+            addMessage('This chest is empty.');
             return;
         }
 
