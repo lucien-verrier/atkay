@@ -66,6 +66,42 @@ h1 {
     min-width: 80px;
 }
 
+/* HP color coding */
+.hp-full {
+    color: #00ff00;
+    font-weight: bold;
+}
+
+.hp-medium {
+    color: #88ff00;
+    font-weight: bold;
+}
+
+.hp-low {
+    color: #ffaa00;
+    font-weight: bold;
+}
+
+.hp-critical {
+    color: #ff3333;
+    font-weight: bold;
+    text-shadow: 0 0 3px #ff3333;
+}
+
+/* XP color coding */
+.xp-low {
+    color: #888;
+}
+
+.xp-medium {
+    color: #aaa;
+}
+
+.xp-high {
+    color: #ffdd00;
+    font-weight: bold;
+}
+
 .message-log {
     margin-top: 20px;
     padding-top: 15px;

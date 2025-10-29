@@ -697,14 +697,25 @@ function render() {
 function renderStatus() {
     const statusEl = document.getElementById('status-panel');
     const xpNeeded = player.level * 20;
-    const hpBar = createBar(player.hp, player.maxHp, 15);
-    const xpBar = createBar(player.xp, xpNeeded, 15);
+
+    // Color code HP based on percentage
+    const hpPercent = player.hp / player.maxHp;
+    let hpClass = 'hp-full';
+    if (hpPercent <= 0.25) hpClass = 'hp-critical';
+    else if (hpPercent <= 0.5) hpClass = 'hp-low';
+    else if (hpPercent <= 0.75) hpClass = 'hp-medium';
+
+    // Color code XP based on percentage
+    const xpPercent = player.xp / xpNeeded;
+    let xpClass = 'xp-low';
+    if (xpPercent >= 0.75) xpClass = 'xp-high';
+    else if (xpPercent >= 0.5) xpClass = 'xp-medium';
 
     let html = `
         <div class="stat-row"><span class="stat-label">Floor:</span> ${currentFloor}/${MAX_FLOORS}</div>
         <div class="stat-row"><span class="stat-label">Level:</span> ${player.level}</div>
-        <div class="stat-row"><span class="stat-label">HP:</span> ${hpBar} ${player.hp}/${player.maxHp}</div>
-        <div class="stat-row"><span class="stat-label">XP:</span> ${xpBar} ${player.xp}/${xpNeeded}</div>
+        <div class="stat-row"><span class="stat-label">HP:</span> <span class="${hpClass}">${player.hp}/${player.maxHp}</span></div>
+        <div class="stat-row"><span class="stat-label">XP:</span> <span class="${xpClass}">${player.xp}/${xpNeeded}</span></div>
         <div class="stat-row"><span class="stat-label">Attack:</span> ${player.attack}</div>
         <div class="stat-row"><span class="stat-label">Defense:</span> ${player.defense}</div>
         <div class="stat-row"><span class="stat-label">Enemies:</span> ${enemies.length}</div>
@@ -741,6 +752,15 @@ function renderChestUI() {
     }
 
     const item = currentChest.item;
+    const BOX_WIDTH = 36;
+
+    // Helper to create a properly padded line
+    const padLine = (text) => {
+        if (text.length >= BOX_WIDTH) {
+            return text.substring(0, BOX_WIDTH);
+        }
+        return text + ' '.repeat(BOX_WIDTH - text.length);
+    };
 
     let itemStats = '';
     if (item.type === 'weapon') itemStats = `Attack: +${item.attack}`;
@@ -757,32 +777,31 @@ function renderChestUI() {
         else if (currentItem.type === 'potion') currentStats = `Effect: ${currentItem.effect}`;
     }
 
+    const foundLine = padLine(`  Found: ${item.name}`);
+    const typeLine = padLine(`  Type: ${item.type}`);
+    const statsLine = padLine(`  ${itemStats}`);
+    const currentLine = padLine(`  Current ${item.type}: ${currentItem ? currentItem.name : 'None'}`);
+    const currentStatsLine = currentItem ? padLine(`  ${currentStats}`) : '';
+
     canvas.innerHTML = `
         <div class="chest-ui">
             ╔════════════════════════════════════╗
-            ║          CHEST OPENED!             ║
+            ║${padLine('          CHEST OPENED!')}║
             ╠════════════════════════════════════╣
-            ║                                    ║
-            ║  Found: ${item.name.padEnd(25, ' ')} ║
-            ║  Type: ${item.type.padEnd(26, ' ')} ║
-            ║  ${itemStats.padEnd(32, ' ')} ║
-            ║                                    ║
-            ║  Current ${item.type}: ${(currentItem ? currentItem.name : 'None').padEnd(18, ' ')} ║
-            ${currentItem ? `║  ${currentStats.padEnd(32, ' ')} ║` : ''}
-            ║                                    ║
-            ║  [T] Take / Swap                   ║
-            ║  [L] Leave it                      ║
-            ║                                    ║
+            ║${padLine('')}║
+            ║${foundLine}║
+            ║${typeLine}║
+            ║${statsLine}║
+            ║${padLine('')}║
+            ║${currentLine}║
+            ${currentItem ? `║${currentStatsLine}║` : ''}
+            ║${padLine('')}║
+            ║${padLine('  [T] Take / Swap')}║
+            ║${padLine('  [L] Leave it')}║
+            ║${padLine('')}║
             ╚════════════════════════════════════╝
         </div>
     `;
-}
-
-// Create a visual bar
-function createBar(current, max, length) {
-    const filled = Math.floor((current / max) * length);
-    const empty = length - filled;
-    return '[' + '='.repeat(Math.max(0, filled)) + ' '.repeat(Math.max(0, empty)) + ']';
 }
 
 // Render victory screen
