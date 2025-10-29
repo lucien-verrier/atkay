@@ -17,6 +17,7 @@ body {
 
 .container {
     text-align: center;
+    max-width: 1400px;
 }
 
 h1 {
@@ -34,6 +35,49 @@ h1 {
     margin: 5px 0;
 }
 
+.game-layout {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.status-panel {
+    background-color: #0a0a0a;
+    padding: 20px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    min-width: 280px;
+    text-align: left;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+}
+
+.stat-row {
+    margin: 8px 0;
+    color: #e0e0e0;
+}
+
+.stat-label {
+    color: #4a9eff;
+    font-weight: bold;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.message-log {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.message {
+    margin: 5px 0;
+    color: #aaa;
+    font-size: 12px;
+}
+
 #game-canvas {
     display: inline-block;
     background-color: #000;
@@ -49,14 +93,113 @@ h1 {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
 }
 
-.player {
+/* Player colors based on health */
+.player-healthy {
     color: #ffff00;
+    text-shadow: 0 0 5px #ffff00;
 }
 
-.wall {
+.player-injured {
+    color: #ffaa00;
+    text-shadow: 0 0 5px #ffaa00;
+}
+
+.player-critical {
+    color: #ff3333;
+    text-shadow: 0 0 5px #ff3333;
+}
+
+/* Wall variants with gradient colors */
+.wall-0 {
     color: #666;
 }
 
-.floor {
+.wall-1 {
+    color: #777;
+}
+
+.wall-2 {
+    color: #555;
+}
+
+/* Floor variants with subtle gradient */
+.floor-0 {
+    color: #2a2a2a;
+}
+
+.floor-1 {
     color: #333;
+}
+
+.floor-2 {
+    color: #3a3a3a;
+}
+
+.floor-3 {
+    color: #282828;
+}
+
+/* Goblin variants - green gradient */
+.enemy-goblin-0 {
+    color: #00ff00;
+    text-shadow: 0 0 3px #00ff00;
+}
+
+.enemy-goblin-1 {
+    color: #00dd00;
+    text-shadow: 0 0 3px #00dd00;
+}
+
+.enemy-goblin-2 {
+    color: #00bb00;
+    text-shadow: 0 0 3px #00bb00;
+}
+
+/* Kobold variants - orange/brown gradient */
+.enemy-kobold-0 {
+    color: #ff8800;
+    text-shadow: 0 0 3px #ff8800;
+}
+
+.enemy-kobold-1 {
+    color: #dd7700;
+    text-shadow: 0 0 3px #dd7700;
+}
+
+.enemy-kobold-2 {
+    color: #bb6600;
+    text-shadow: 0 0 3px #bb6600;
+}
+
+/* Ogre variants - red gradient */
+.enemy-ogre-0 {
+    color: #ff0000;
+    text-shadow: 0 0 4px #ff0000;
+}
+
+.enemy-ogre-1 {
+    color: #dd0000;
+    text-shadow: 0 0 4px #dd0000;
+}
+
+.enemy-ogre-2 {
+    color: #bb0000;
+    text-shadow: 0 0 4px #bb0000;
+}
+
+/* Game over styling */
+.game-over {
+    color: #ff3333;
+    font-size: 18px;
+    line-height: 24px;
+    text-align: center;
+    padding: 40px;
+}
+
+.game-over-text {
+    color: #ff3333;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 50px;
 }
