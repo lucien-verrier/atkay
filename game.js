@@ -1,3 +1,244 @@
+// ===== NAME GENERATION SYSTEM =====
+
+// Enemy name components by type
+const NAME_BANKS = {
+    rat: {
+        prefixes: ['Scurry', 'Nibble', 'Scratch', 'Squeak', 'Gnaw', 'Filth', 'Plague', 'Sewer'],
+        suffixes: ['tail', 'tooth', 'claw', 'whisker', 'eye', 'fur', 'paw']
+    },
+    kobold: {
+        first: ['Klaus', 'Gregor', 'Dimitri', 'Boris', 'Viktor', 'Igor', 'Sergei', 'Mikhail', 'Anton', 'Pavel', 'Yuri', 'Stanislav'],
+        last: ['Kowalski', 'Novak', 'Kovač', 'Petrov', 'Volkov', 'Sokolov', 'Popov', 'Ivanov']
+    },
+    goblin: {
+        names: ['Grak', 'Snark', 'Grizz', 'Brak', 'Skrag', 'Grub', 'Muck', 'Gnarl', 'Zog', 'Krag', 'Throk', 'Drek', 'Grot', 'Snag']
+    },
+    spider: {
+        prefixes: ['Venom', 'Shadow', 'Web', 'Silk', 'Dark', 'Night', 'Creep', 'Fang'],
+        suffixes: ['spinner', 'crawler', 'lurker', 'stalker', 'weaver', 'hunter', 'biter']
+    },
+    skeleton: {
+        titles: ['Sir', 'Lord', 'Duke', 'Baron', 'Count', 'Knight'],
+        names: ['Aldric', 'Godwin', 'Oswald', 'Edmund', 'Cedric', 'Bertram', 'Thurstan', 'Wulfric', 'Aelfric', 'Leofric']
+    },
+    orc: {
+        names: ['Ghor', 'Thrak', 'Morg', 'Uruk', 'Gorz', 'Drog', 'Kruk', 'Grok', 'Shak', 'Grash', 'Urg', 'Nazg', 'Grishnakh']
+    },
+    ogre: {
+        names: ['Bonecrusher', 'Gut', 'Maw', 'Stomp', 'Grendel', 'Lunk', 'Thud', 'Crush', 'Smash', 'Grunk', 'Mog']
+    },
+    wraith: {
+        titles: ['The Forgotten', 'The Lost', 'The Hollow', 'The Eternal', 'The Pale', 'The Mourning', 'The Silent'],
+        names: ['Specter', 'Phantom', 'Shade', 'Banshee', 'Revenant', 'Apparition', 'Wraith']
+    },
+    troll: {
+        names: ['Thorgar', 'Haldor', 'Ragnar', 'Bjorn', 'Ulfar', 'Sven', 'Gunnar', 'Torsten', 'Hrothgar', 'Gorm']
+    },
+    minotaur: {
+        names: ['Asterion', 'Tauros', 'Minos', 'Theron', 'Aegeus', 'Perseus', 'Daedalus', 'Icarus', 'Arion', 'Theseus']
+    },
+    demon: {
+        names: ['Belial', 'Moloch', 'Baal', 'Asmodeus', 'Beelzebub', 'Mephistopheles', 'Abaddon', 'Apollyon', 'Leviathan', 'Mammon', 'Azazel', 'Lucifuge']
+    },
+    lich: {
+        titles: ['Archlich', 'Necromancer', 'Death Lord', 'Dark Sorcerer'],
+        names: ['Vecna', 'Acererak', 'Szass', 'Larloch', 'Zengyi', 'Azalin', 'Velsharoon']
+    },
+    dragon: {
+        prefixes: ['Ancient', 'Elder', 'Wyrm', 'Great', 'Dread', 'Eternal'],
+        names: ['Smaug', 'Bahamut', 'Tiamat', 'Ancalagon', 'Glaurung', 'Fafnir', 'Nidhogg', 'Jormungandr']
+    }
+};
+
+// Item name components
+const ITEM_NAME_BANKS = {
+    weapon: {
+        prefixes: ['Crimson', 'Shadow', 'Ancient', 'Blessed', 'Cursed', 'Radiant', 'Void', 'Storm', 'Frost', 'Flame', 'Thunder', 'Spectral', 'Divine', 'Infernal', 'Ethereal'],
+        bases: ['Blade', 'Sword', 'Edge', 'Fang', 'Claw', 'Talon', 'Reaver', 'Cleaver', 'Saber', 'Scimitar'],
+        suffixes: ['of Power', 'of Fury', 'of Ruin', 'of Light', 'of Darkness', 'of Storms', 'of Flame', 'of Frost', 'of Wrath', 'of Vengeance', 'of Glory', 'of Despair']
+    },
+    armor: {
+        prefixes: ['Iron', 'Steel', 'Mythril', 'Dragon', 'Demon', 'Angel', 'Crystal', 'Shadow', 'Radiant', 'Obsidian', 'Sapphire', 'Ruby'],
+        bases: ['Mail', 'Plate', 'Guard', 'Ward', 'Shell', 'Aegis', 'Bulwark', 'Carapace'],
+        suffixes: ['of Protection', 'of Warding', 'of Resilience', 'of Fortitude', 'of the Titan', 'of the Mountain', 'of the Ancients', 'of Invulnerability']
+    },
+    ring: {
+        prefixes: ['Ring', 'Band', 'Circle', 'Loop', 'Sigil'],
+        descriptors: ['of Strength', 'of Power', 'of Vitality', 'of Protection', 'of Warding', 'of Might', 'of Endurance', 'of Regeneration', 'of the Bear', 'of the Lion', 'of the Titan', 'of the Phoenix', 'of the Serpent', 'of the Dragon']
+    },
+    potion: {
+        types: ['Elixir', 'Draught', 'Philter', 'Tonic', 'Essence', 'Brew', 'Concoction', 'Mixture'],
+        descriptors: ['of Healing', 'of Vigor', 'of Strength', 'of Resilience', 'of Fortitude', 'of Restoration', 'of Life', 'of Vitality', 'of Might', 'of Power', 'of the Gods', 'of Renewal']
+    }
+};
+
+// Level name components
+const LEVEL_NAME_BANKS = {
+    numbers: ['Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen'],
+    nouns1: ['Knights', 'Shadows', 'Echoes', 'Whispers', 'Dreams', 'Memories', 'Sorrows', 'Ravens', 'Serpents', 'Wolves', 'Crows', 'Ghosts'],
+    verbs: ['Advance', 'Fall', 'Rise', 'Wait', 'Weep', 'Dance', 'Sleep', 'Wake', 'Linger', 'Fade', 'Gather', 'Scatter'],
+    articles: ['The', 'A', 'An'],
+    adjectives: ['Azure', 'Crimson', 'Forgotten', 'Lost', 'Ancient', 'Broken', 'Silent', 'Hollow', 'Endless', 'Bitter', 'Pale', 'Deep', 'Dark'],
+    nouns2: ['Thumbprint', 'Staircase', 'Garden', 'Chamber', 'Threshold', 'Passage', 'Archive', 'Gallery', 'Sanctum', 'Vault', 'Crypt', 'Spire'],
+    possessiveNouns: ['Azem', 'Mordred', 'Ashur', 'Selene', 'Corvus', 'Morrow', 'Vesper', 'Kael', 'Lysander', 'Nyx', 'Oberon', 'Circe'],
+    locations: ['Belfry', 'Tower', 'Gate', 'Bridge', 'Hall', 'Court', 'Throne', 'Crown', 'Sepulcher', 'Ossuary', 'Chapel', 'Refectory'],
+    phrases: [
+        'A Meeting Cut Short',
+        'Whither the Wanderlust Wait',
+        'Where Shadows Conspire',
+        'The Hour Before Dawn',
+        'A Path Less Traveled',
+        'The Weight of Silence',
+        'Where Light Fails',
+        'The Edge of Memory',
+        'A Door Left Ajar',
+        'The Sound of Falling',
+        'Between Breath and Stone',
+        'The Last Vigil'
+    ]
+};
+
+// Track used names to avoid duplicates
+let usedNames = {
+    enemies: new Set(),
+    items: new Set(),
+    levels: new Set()
+};
+
+// Random selection helper
+function randomFrom(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+// Generate enemy name based on type
+function generateEnemyName(type) {
+    const bank = NAME_BANKS[type];
+    if (!bank) return ENEMY_TYPES[type].name;
+
+    let name = '';
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    do {
+        switch(type) {
+            case 'rat':
+                name = randomFrom(bank.prefixes) + randomFrom(bank.suffixes);
+                break;
+            case 'kobold':
+                name = randomFrom(bank.first) + ' ' + randomFrom(bank.last);
+                break;
+            case 'goblin':
+            case 'orc':
+            case 'ogre':
+            case 'troll':
+            case 'minotaur':
+                name = randomFrom(bank.names);
+                break;
+            case 'spider':
+                name = randomFrom(bank.prefixes) + randomFrom(bank.suffixes);
+                break;
+            case 'skeleton':
+                name = randomFrom(bank.titles) + ' ' + randomFrom(bank.names);
+                break;
+            case 'wraith':
+                if (Math.random() < 0.5) {
+                    name = randomFrom(bank.names) + ' ' + randomFrom(bank.titles);
+                } else {
+                    name = randomFrom(bank.titles);
+                }
+                break;
+            case 'demon':
+                name = randomFrom(bank.names);
+                if (Math.random() < 0.3) {
+                    name += ' the ' + randomFrom(['Corruptor', 'Defiler', 'Destroyer', 'Tempter', 'Deceiver']);
+                }
+                break;
+            case 'lich':
+                name = randomFrom(bank.titles) + ' ' + randomFrom(bank.names);
+                break;
+            case 'dragon':
+                name = randomFrom(bank.prefixes) + ' ' + randomFrom(bank.names);
+                break;
+            default:
+                name = ENEMY_TYPES[type].name;
+        }
+        attempts++;
+    } while (usedNames.enemies.has(name) && attempts < maxAttempts);
+
+    usedNames.enemies.add(name);
+    return name;
+}
+
+// Generate item name
+function generateItemName(type, rarity) {
+    const bank = ITEM_NAME_BANKS[type];
+    if (!bank) return 'Unknown Item';
+
+    let name = '';
+    let attempts = 0;
+    const maxAttempts = 100;
+
+    do {
+        switch(type) {
+            case 'weapon':
+                if (rarity <= 1) {
+                    name = randomFrom(bank.bases);
+                } else if (rarity <= 2) {
+                    name = randomFrom(bank.prefixes) + ' ' + randomFrom(bank.bases);
+                } else {
+                    name = randomFrom(bank.prefixes) + ' ' + randomFrom(bank.bases) + ' ' + randomFrom(bank.suffixes);
+                }
+                break;
+            case 'armor':
+                if (rarity <= 1) {
+                    name = randomFrom(bank.bases);
+                } else if (rarity <= 2) {
+                    name = randomFrom(bank.prefixes) + ' ' + randomFrom(bank.bases);
+                } else {
+                    name = randomFrom(bank.prefixes) + ' ' + randomFrom(bank.bases) + ' ' + randomFrom(bank.suffixes);
+                }
+                break;
+            case 'ring':
+                name = randomFrom(bank.prefixes) + ' ' + randomFrom(bank.descriptors);
+                break;
+            case 'potion':
+                name = randomFrom(bank.types) + ' ' + randomFrom(bank.descriptors);
+                break;
+            default:
+                name = 'Mysterious ' + type;
+        }
+        attempts++;
+    } while (usedNames.items.has(name) && attempts < maxAttempts);
+
+    usedNames.items.add(name);
+    return name;
+}
+
+// Generate level name
+function generateLevelName() {
+    const patterns = [
+        () => randomFrom(LEVEL_NAME_BANKS.numbers) + ' ' + randomFrom(LEVEL_NAME_BANKS.nouns1) + ' ' + randomFrom(LEVEL_NAME_BANKS.verbs),
+        () => randomFrom(LEVEL_NAME_BANKS.articles) + ' ' + randomFrom(LEVEL_NAME_BANKS.adjectives) + ' ' + randomFrom(LEVEL_NAME_BANKS.nouns2),
+        () => randomFrom(LEVEL_NAME_BANKS.possessiveNouns) + "'s " + randomFrom(LEVEL_NAME_BANKS.locations),
+        () => randomFrom(LEVEL_NAME_BANKS.phrases)
+    ];
+
+    let name = '';
+    let attempts = 0;
+    const maxAttempts = 50;
+
+    do {
+        const pattern = randomFrom(patterns);
+        name = pattern();
+        attempts++;
+    } while (usedNames.levels.has(name) && attempts < maxAttempts);
+
+    usedNames.levels.add(name);
+    return name;
+}
+
+// ===== END NAME GENERATION SYSTEM =====
+
 // Game configuration
 const GAME_WIDTH = 60;
 const GAME_HEIGHT = 30;
@@ -36,40 +277,97 @@ const ENEMY_TYPES = {
     dragon: { char: 'X', name: 'Dragon', hp: 60, attack: 15, xp: 100, color: 'enemy-dragon', minFloor: 18, maxFloor: 20 }
 };
 
-// Item definitions
+// Item definitions (names will be generated, these are templates)
 const WEAPON_TYPES = [
-    { name: 'Rusty Dagger', attack: 2, rarity: 1 },
-    { name: 'Short Sword', attack: 4, rarity: 1 },
-    { name: 'Iron Sword', attack: 6, rarity: 2 },
-    { name: 'Steel Blade', attack: 8, rarity: 2 },
-    { name: 'Enchanted Sword', attack: 10, rarity: 3 },
-    { name: 'Flamebrand', attack: 12, rarity: 3 },
-    { name: 'Dragon Slayer', attack: 15, rarity: 4 }
+    { name: 'Weapon', attack: 2, rarity: 1 },
+    { name: 'Weapon', attack: 3, rarity: 1 },
+    { name: 'Weapon', attack: 4, rarity: 1 },
+    { name: 'Weapon', attack: 5, rarity: 2 },
+    { name: 'Weapon', attack: 6, rarity: 2 },
+    { name: 'Weapon', attack: 7, rarity: 2 },
+    { name: 'Weapon', attack: 8, rarity: 2 },
+    { name: 'Weapon', attack: 9, rarity: 3 },
+    { name: 'Weapon', attack: 10, rarity: 3 },
+    { name: 'Weapon', attack: 11, rarity: 3 },
+    { name: 'Weapon', attack: 12, rarity: 3 },
+    { name: 'Weapon', attack: 13, rarity: 3 },
+    { name: 'Weapon', attack: 14, rarity: 4 },
+    { name: 'Weapon', attack: 15, rarity: 4 },
+    { name: 'Weapon', attack: 16, rarity: 4 },
+    { name: 'Weapon', attack: 17, rarity: 4 },
+    { name: 'Weapon', attack: 18, rarity: 4 },
+    { name: 'Weapon', attack: 19, rarity: 4 },
+    { name: 'Weapon', attack: 20, rarity: 4 },
+    { name: 'Weapon', attack: 22, rarity: 4 }
 ];
 
 const ARMOR_TYPES = [
-    { name: 'Cloth Armor', defense: 1, hp: 5, rarity: 1 },
-    { name: 'Leather Armor', defense: 2, hp: 8, rarity: 1 },
-    { name: 'Chainmail', defense: 3, hp: 12, rarity: 2 },
-    { name: 'Plate Armor', defense: 4, hp: 15, rarity: 2 },
-    { name: 'Enchanted Mail', defense: 5, hp: 20, rarity: 3 },
-    { name: 'Dragon Scale', defense: 7, hp: 25, rarity: 4 }
+    { name: 'Armor', defense: 1, hp: 5, rarity: 1 },
+    { name: 'Armor', defense: 1, hp: 8, rarity: 1 },
+    { name: 'Armor', defense: 2, hp: 10, rarity: 1 },
+    { name: 'Armor', defense: 2, hp: 12, rarity: 2 },
+    { name: 'Armor', defense: 3, hp: 14, rarity: 2 },
+    { name: 'Armor', defense: 3, hp: 16, rarity: 2 },
+    { name: 'Armor', defense: 4, hp: 18, rarity: 2 },
+    { name: 'Armor', defense: 4, hp: 20, rarity: 3 },
+    { name: 'Armor', defense: 5, hp: 22, rarity: 3 },
+    { name: 'Armor', defense: 5, hp: 24, rarity: 3 },
+    { name: 'Armor', defense: 6, hp: 26, rarity: 3 },
+    { name: 'Armor', defense: 6, hp: 28, rarity: 3 },
+    { name: 'Armor', defense: 7, hp: 30, rarity: 4 },
+    { name: 'Armor', defense: 7, hp: 32, rarity: 4 },
+    { name: 'Armor', defense: 8, hp: 34, rarity: 4 },
+    { name: 'Armor', defense: 8, hp: 36, rarity: 4 },
+    { name: 'Armor', defense: 9, hp: 38, rarity: 4 },
+    { name: 'Armor', defense: 9, hp: 40, rarity: 4 },
+    { name: 'Armor', defense: 10, hp: 42, rarity: 4 },
+    { name: 'Armor', defense: 10, hp: 45, rarity: 4 }
 ];
 
 const RING_TYPES = [
-    { name: 'Ring of Strength', effect: 'attack', value: 3, rarity: 2 },
-    { name: 'Ring of Protection', effect: 'defense', value: 2, rarity: 2 },
-    { name: 'Ring of Vitality', effect: 'hp', value: 15, rarity: 2 },
-    { name: 'Ring of Regeneration', effect: 'regen', value: 1, rarity: 3 },
-    { name: 'Ring of Power', effect: 'attack', value: 5, rarity: 3 }
+    { name: 'Ring', effect: 'attack', value: 2, rarity: 2 },
+    { name: 'Ring', effect: 'attack', value: 3, rarity: 2 },
+    { name: 'Ring', effect: 'attack', value: 4, rarity: 3 },
+    { name: 'Ring', effect: 'attack', value: 5, rarity: 3 },
+    { name: 'Ring', effect: 'attack', value: 6, rarity: 3 },
+    { name: 'Ring', effect: 'attack', value: 7, rarity: 4 },
+    { name: 'Ring', effect: 'attack', value: 8, rarity: 4 },
+    { name: 'Ring', effect: 'defense', value: 2, rarity: 2 },
+    { name: 'Ring', effect: 'defense', value: 3, rarity: 2 },
+    { name: 'Ring', effect: 'defense', value: 4, rarity: 3 },
+    { name: 'Ring', effect: 'defense', value: 5, rarity: 4 },
+    { name: 'Ring', effect: 'hp', value: 10, rarity: 2 },
+    { name: 'Ring', effect: 'hp', value: 15, rarity: 2 },
+    { name: 'Ring', effect: 'hp', value: 20, rarity: 3 },
+    { name: 'Ring', effect: 'hp', value: 25, rarity: 3 },
+    { name: 'Ring', effect: 'hp', value: 30, rarity: 4 },
+    { name: 'Ring', effect: 'regen', value: 1, rarity: 3 },
+    { name: 'Ring', effect: 'regen', value: 2, rarity: 3 },
+    { name: 'Ring', effect: 'regen', value: 3, rarity: 4 },
+    { name: 'Ring', effect: 'regen', value: 4, rarity: 4 }
 ];
 
 const POTION_TYPES = [
-    { name: 'Health Potion', effect: 'heal', value: 20, rarity: 1 },
-    { name: 'Greater Health Potion', effect: 'heal', value: 40, rarity: 2 },
-    { name: 'Strength Potion', effect: 'attack', value: 3, rarity: 2 },
-    { name: 'Defense Potion', effect: 'defense', value: 2, rarity: 2 },
-    { name: 'Full Restore', effect: 'fullheal', value: 0, rarity: 3 }
+    { name: 'Potion', effect: 'heal', value: 15, rarity: 1 },
+    { name: 'Potion', effect: 'heal', value: 20, rarity: 1 },
+    { name: 'Potion', effect: 'heal', value: 25, rarity: 1 },
+    { name: 'Potion', effect: 'heal', value: 30, rarity: 2 },
+    { name: 'Potion', effect: 'heal', value: 35, rarity: 2 },
+    { name: 'Potion', effect: 'heal', value: 40, rarity: 2 },
+    { name: 'Potion', effect: 'heal', value: 50, rarity: 2 },
+    { name: 'Potion', effect: 'heal', value: 60, rarity: 3 },
+    { name: 'Potion', effect: 'heal', value: 70, rarity: 3 },
+    { name: 'Potion', effect: 'heal', value: 80, rarity: 3 },
+    { name: 'Potion', effect: 'attack', value: 2, rarity: 2 },
+    { name: 'Potion', effect: 'attack', value: 3, rarity: 2 },
+    { name: 'Potion', effect: 'attack', value: 4, rarity: 2 },
+    { name: 'Potion', effect: 'attack', value: 5, rarity: 3 },
+    { name: 'Potion', effect: 'attack', value: 6, rarity: 3 },
+    { name: 'Potion', effect: 'attack', value: 7, rarity: 3 },
+    { name: 'Potion', effect: 'defense', value: 2, rarity: 2 },
+    { name: 'Potion', effect: 'defense', value: 3, rarity: 3 },
+    { name: 'Potion', effect: 'defense', value: 4, rarity: 3 },
+    { name: 'Potion', effect: 'fullheal', value: 0, rarity: 4 }
 ];
 
 // Game state
@@ -81,6 +379,7 @@ let chests = [];
 let stairs = null;
 let chalice = null;
 let currentFloor = 1;
+let levelName = '';
 let gameWon = false;
 let gameStarted = false;
 let player = {
@@ -133,6 +432,9 @@ function init() {
 
 // Generate a complete level
 function generateLevel() {
+    // Generate a unique name for this level
+    levelName = generateLevelName();
+
     let attempts = 0;
     let validLevel = false;
 
@@ -260,19 +562,27 @@ function generateFloorVariants() {
 function generateWallHeightMap() {
     wallHeightMap = [];
 
-    // Use simple Perlin-like noise for smooth height variation
-    const scale = 0.15;
+    // Create noisy heightmap for rocky texture
+    const scale = 0.2;
     for (let y = 0; y < GAME_HEIGHT; y++) {
         wallHeightMap[y] = [];
         for (let x = 0; x < GAME_WIDTH; x++) {
-            // Create smooth noise using multiple frequencies
+            // Base smooth noise using multiple frequencies
             let value = 0;
             value += Math.sin(x * scale) * Math.cos(y * scale);
             value += Math.sin(x * scale * 2) * Math.cos(y * scale * 2) * 0.5;
-            value += Math.sin(x * scale * 0.5) * Math.cos(y * scale * 0.5) * 2;
+            value += Math.sin(x * scale * 0.5) * Math.cos(y * scale * 0.5) * 1.5;
+
+            // Add significant random noise for roughness (30% influence)
+            const randomNoise = (Math.random() - 0.5) * 2; // -1 to 1
+            value = value * 0.7 + randomNoise * 0.3;
+
+            // Add small-scale detail noise for rocky texture
+            const detailNoise = (Math.random() - 0.5) * 1.5;
+            value += detailNoise * 0.4;
 
             // Normalize to 0-4 range for WALL_CHARS indices
-            value = (value + 4) / 8; // Roughly normalize
+            value = (value + 3) / 6; // Roughly normalize
             value = Math.max(0, Math.min(0.99, value)); // Clamp 0-0.99
             wallHeightMap[y][x] = Math.floor(value * WALL_CHARS.length);
         }
@@ -423,7 +733,7 @@ function spawnEnemies(accessibleTiles) {
                 x: tile.x,
                 y: tile.y,
                 char: template.char,
-                name: template.name,
+                name: generateEnemyName(typeKey),
                 hp: scaledHP,
                 maxHp: scaledHP,
                 attack: scaledAttack,
@@ -507,7 +817,12 @@ function generateItem(type, maxRarity) {
     if (validItems.length === 0) return null;
 
     const template = validItems[Math.floor(Math.random() * validItems.length)];
-    return { ...template, type };
+    const item = { ...template, type };
+
+    // Generate a unique name for this item
+    item.name = generateItemName(type, template.rarity);
+
+    return item;
 }
 
 // Update player stats based on equipment
@@ -684,11 +999,13 @@ function takeItem(slot) {
 
 // Leave item in chest
 function closeChest() {
-    // If leaving item behind, mark chest as opened so it can't be accessed again
-    if (currentChest && currentChest.item) {
+    // Always mark current chest as opened when closing
+    if (currentChest) {
         currentChest.opened = true;
-        currentChest.item = null;
-        addMessage('You left the item behind.');
+        if (currentChest.item) {
+            currentChest.item = null;
+            addMessage('You left the item behind.');
+        }
     }
 
     currentChest = null;
@@ -773,6 +1090,7 @@ function renderStatus() {
 
     let html = `
         <div class="stat-row"><span class="stat-label">Floor:</span> ${currentFloor}/${MAX_FLOORS}</div>
+        <div class="stat-row" style="color: #888; font-size: 12px; font-style: italic; margin-left: 10px;">"${levelName}"</div>
         <div class="stat-row"><span class="stat-label">Level:</span> ${player.level}</div>
         <div class="stat-row"><span class="stat-label">HP:</span> <span class="${hpClass}">${player.hp}/${player.maxHp}</span></div>
         <div class="stat-row"><span class="stat-label">XP:</span> <span class="${xpClass}">${player.xp}/${xpNeeded}</span></div>
@@ -915,22 +1233,38 @@ function renderDifficultySelection() {
     const canvas = document.getElementById('game-canvas');
     const statusEl = document.getElementById('status-panel');
 
+    const BOX_WIDTH = 36;
+    const padLine = (text) => {
+        if (text.length >= BOX_WIDTH) {
+            return text.substring(0, BOX_WIDTH);
+        }
+        return text + ' '.repeat(BOX_WIDTH - text.length);
+    };
+
+    const line1 = padLine('     ASCII ROGUELIKE DUNGEON');
+    const line2 = padLine('   SELECT DIFFICULTY (0-10):');
+    const line3 = padLine(`   Current: ${difficultyLevel}`);
+    const line4 = padLine('   0 = Normal');
+    const line5 = padLine('   5 = Hard');
+    const line6 = padLine('   10 = Mega Hard');
+    const line7 = padLine('   [↑/↓] Adjust | [Enter] Start');
+
     canvas.innerHTML = `
         <div class="difficulty-screen">
             ╔════════════════════════════════════╗
-            ║     ASCII ROGUELIKE DUNGEON        ║
+            ║${line1}║
             ╠════════════════════════════════════╣
-            ║                                    ║
-            ║   SELECT DIFFICULTY (0-10):        ║
-            ║                                    ║
-            ║   Current: ${String(difficultyLevel).padStart(2, ' ')}                       ║
-            ║                                    ║
-            ║   0 = Normal                       ║
-            ║   5 = Hard                         ║
-            ║   10 = Mega Hard                   ║
-            ║                                    ║
-            ║   [↑/↓] Adjust | [Enter] Start    ║
-            ║                                    ║
+            ║${padLine('')}║
+            ║${line2}║
+            ║${padLine('')}║
+            ║${line3}║
+            ║${padLine('')}║
+            ║${line4}║
+            ║${line5}║
+            ║${line6}║
+            ║${padLine('')}║
+            ║${line7}║
+            ║${padLine('')}║
             ╚════════════════════════════════════╝
         </div>
     `;
@@ -1018,6 +1352,9 @@ function handleInput(event) {
     if (event.code === 'KeyE') {
         event.preventDefault();
 
+        // Don't interact if already in chest UI
+        if (showingChest) return;
+
         // Check for stairs
         if (stairs && player.x === stairs.x && player.y === stairs.y) {
             descendStairs();
@@ -1033,8 +1370,11 @@ function handleInput(event) {
 
         // Check for chest
         const chest = getChestAt(player.x, player.y);
-        if (chest) {
+        if (chest && !chest.opened) {
             openChest(chest);
+            return;
+        } else if (chest && chest.opened) {
+            addMessage('This chest is empty.');
             return;
         }
 
