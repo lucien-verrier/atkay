@@ -187,6 +187,236 @@ h1 {
     text-shadow: 0 0 4px #bb0000;
 }
 
+/* Rat variants - gray gradient */
+.enemy-rat-0 {
+    color: #888;
+    text-shadow: 0 0 2px #888;
+}
+
+.enemy-rat-1 {
+    color: #999;
+    text-shadow: 0 0 2px #999;
+}
+
+.enemy-rat-2 {
+    color: #777;
+    text-shadow: 0 0 2px #777;
+}
+
+/* Spider variants - purple gradient */
+.enemy-spider-0 {
+    color: #9933ff;
+    text-shadow: 0 0 3px #9933ff;
+}
+
+.enemy-spider-1 {
+    color: #8822dd;
+    text-shadow: 0 0 3px #8822dd;
+}
+
+.enemy-spider-2 {
+    color: #7711bb;
+    text-shadow: 0 0 3px #7711bb;
+}
+
+/* Skeleton variants - white/bone gradient */
+.enemy-skeleton-0 {
+    color: #f0f0f0;
+    text-shadow: 0 0 3px #f0f0f0;
+}
+
+.enemy-skeleton-1 {
+    color: #e0e0e0;
+    text-shadow: 0 0 3px #e0e0e0;
+}
+
+.enemy-skeleton-2 {
+    color: #d0d0d0;
+    text-shadow: 0 0 3px #d0d0d0;
+}
+
+/* Orc variants - dark green gradient */
+.enemy-orc-0 {
+    color: #00cc00;
+    text-shadow: 0 0 3px #00cc00;
+}
+
+.enemy-orc-1 {
+    color: #00aa00;
+    text-shadow: 0 0 3px #00aa00;
+}
+
+.enemy-orc-2 {
+    color: #008800;
+    text-shadow: 0 0 3px #008800;
+}
+
+/* Wraith variants - cyan/ghost gradient */
+.enemy-wraith-0 {
+    color: #00ffff;
+    text-shadow: 0 0 4px #00ffff;
+}
+
+.enemy-wraith-1 {
+    color: #00dddd;
+    text-shadow: 0 0 4px #00dddd;
+}
+
+.enemy-wraith-2 {
+    color: #00bbbb;
+    text-shadow: 0 0 4px #00bbbb;
+}
+
+/* Troll variants - brown gradient */
+.enemy-troll-0 {
+    color: #996633;
+    text-shadow: 0 0 3px #996633;
+}
+
+.enemy-troll-1 {
+    color: #885522;
+    text-shadow: 0 0 3px #885522;
+}
+
+.enemy-troll-2 {
+    color: #774411;
+    text-shadow: 0 0 3px #774411;
+}
+
+/* Minotaur variants - dark red gradient */
+.enemy-minotaur-0 {
+    color: #cc0000;
+    text-shadow: 0 0 4px #cc0000;
+}
+
+.enemy-minotaur-1 {
+    color: #aa0000;
+    text-shadow: 0 0 4px #aa0000;
+}
+
+.enemy-minotaur-2 {
+    color: #880000;
+    text-shadow: 0 0 4px #880000;
+}
+
+/* Demon variants - dark magenta gradient */
+.enemy-demon-0 {
+    color: #ff00ff;
+    text-shadow: 0 0 5px #ff00ff;
+}
+
+.enemy-demon-1 {
+    color: #dd00dd;
+    text-shadow: 0 0 5px #dd00dd;
+}
+
+.enemy-demon-2 {
+    color: #bb00bb;
+    text-shadow: 0 0 5px #bb00bb;
+}
+
+/* Lich variants - dark blue gradient */
+.enemy-lich-0 {
+    color: #4444ff;
+    text-shadow: 0 0 5px #4444ff;
+}
+
+.enemy-lich-1 {
+    color: #3333dd;
+    text-shadow: 0 0 5px #3333dd;
+}
+
+.enemy-lich-2 {
+    color: #2222bb;
+    text-shadow: 0 0 5px #2222bb;
+}
+
+/* Dragon variants - golden gradient */
+.enemy-dragon-0 {
+    color: #ffcc00;
+    text-shadow: 0 0 6px #ffcc00;
+}
+
+.enemy-dragon-1 {
+    color: #ddaa00;
+    text-shadow: 0 0 6px #ddaa00;
+}
+
+.enemy-dragon-2 {
+    color: #bb8800;
+    text-shadow: 0 0 6px #bb8800;
+}
+
+/* Stairs */
+.stairs {
+    color: #ffff00;
+    text-shadow: 0 0 5px #ffff00;
+}
+
+/* Chalice */
+.chalice {
+    color: #ffdd00;
+    text-shadow: 0 0 8px #ffdd00;
+    font-weight: bold;
+}
+
+/* Chest variants */
+.chest-closed {
+    color: #cc9933;
+    text-shadow: 0 0 3px #cc9933;
+}
+
+.chest-opened {
+    color: #665522;
+    text-shadow: 0 0 2px #665522;
+}
+
+/* Inventory section */
+.inventory-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.inventory-title {
+    color: #4a9eff;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.inventory-item {
+    margin: 5px 0;
+    color: #e0e0e0;
+    font-size: 12px;
+}
+
+/* Chest UI */
+.chest-ui {
+    color: #ffdd00;
+    font-size: 16px;
+    line-height: 22px;
+    text-align: left;
+    padding: 40px;
+    white-space: pre;
+}
+
+/* Victory styling */
+.victory {
+    color: #00ff00;
+    font-size: 18px;
+    line-height: 24px;
+    text-align: center;
+    padding: 40px;
+}
+
+.victory-text {
+    color: #00ff00;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 50px;
+}
+
 /* Game over styling */
 .game-over {
     color: #ff3333;
